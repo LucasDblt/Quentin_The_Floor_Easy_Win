@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcards Joueurs de Rugby - The Floor</title>
+    <title>Entraînement The Floor - Flashcards</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -15,10 +15,60 @@
             justify-content: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #menu-container {
+            background-color: #1e1e1e;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 380px;
+            text-align: center;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            color: #fff;
+            border: 1px solid #444;
+            font-size: 1rem;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4da6ff;
+            color: #121212;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #3385d6;
+        }
+
+        button.hard-mode-btn {
+            background-color: #ffb84d;
+            color: #121212;
+        }
+
+        button.hard-mode-btn:hover {
+            background-color: #e69900;
         }
 
         #loader-screen {
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -51,6 +101,7 @@
             align-items: center;
             width: 380px;
             text-align: center;
+            position: relative;
         }
 
         .image-wrapper {
@@ -62,7 +113,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         img {
@@ -71,23 +122,70 @@
             object-fit: cover;
         }
 
-        #player-name {
+        .text-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+        }
+
+        #item-answer {
             font-size: 1.8rem;
             font-weight: bold;
             min-height: 2.2rem;
             color: #4da6ff;
             visibility: hidden;
-            margin: 10px 0;
+            margin: 5px 0;
         }
 
-        #player-name.visible {
+        #item-answer.visible {
             visibility: visible;
         }
 
-        .instructions {
+        .action-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .fav-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: auto;
+            margin: 0;
+        }
+
+        .fav-btn.active {
+            background: #ffb84d;
+            color: #121212;
+            border-color: #ffb84d;
+            font-weight: bold;
+        }
+
+        .instructions {
+            font-size: 0.85rem;
             color: #888888;
             margin-top: 15px;
+            line-height: 1.4;
         }
 
         #counter {
@@ -98,75 +196,346 @@
 
         .key-badge {
             background: #333;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
             border: 1px solid #555;
             color: #fff;
+        }
+
+        #back-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: auto;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            background-color: #333;
+            color: #ccc;
+            margin: 0;
         }
     </style>
 </head>
 <body>
 
+    <!-- Menu de sélection -->
+    <div id="menu-container">
+        <h2>Entraînement The Floor</h2>
+        <p>Choisissez votre catégorie :</p>
+        <select id="theme-select"></select>
+        <button onclick="startTheme(false)">Lancer la session</button>
+        <button id="hard-mode-btn" class="hard-mode-btn" onclick="startTheme(true)">
+             Mode Révision (0 carte)
+        </button>
+    </div>
+
+    <!-- Écran de chargement -->
     <div id="loader-screen">
-        <h2>Préchargement des 100 joueurs...</h2>
-        <div id="load-status">0 / 100 joueurs prêts</div>
+        <h2 id="loader-title">Préchargement...</h2>
+        <div id="load-status">0 / 0 éléments prêts</div>
         <div class="progress-bar-container">
             <div id="progress-bar" class="progress-bar"></div>
         </div>
     </div>
 
+    <!-- Interface Flashcard -->
     <div id="card-container">
-        <div id="counter">1 / 100</div>
-        <div class="image-wrapper">
-            <img id="player-img" src="" alt="">
+        <button id="back-btn" onclick="returnToMenu()">← Menu</button>
+        <div id="counter">1 / 20</div>
+        <div class="image-wrapper" id="display-wrapper">
+            <!-- Image ou texte inséré dynamiquement -->
         </div>
-        <div id="player-name">---</div>
+        <div id="item-answer">---</div>
+        
+        <div class="action-row">
+            <button id="toggle-fav-btn" class="fav-btn" onclick="toggleFavorite()">
+                <span id="star-icon">☆</span> À revoir (Dur)
+            </button>
+        </div>
+
         <div class="instructions">
-            Appuyez sur <span class="key-badge">Espace</span> pour révéler / passer à la suivante
+            <span class="key-badge">Espace</span> Révéler / Suivant<br>
+            <span class="key-badge">↑ Flèche Haut</span> Marquer comme dur
         </div>
     </div>
 
     <script>
-        const players = [
-            // XV de France Actuel & Stars Top 14 (35)
-            "Antoine Dupont", "Romain Ntamack", "Thomas Ramos", "Damian Penaud", "Gregory Alldritt",
-            "Charles Ollivon", "Gaël Fickou", "Mathieu Jalibert", "Cyril Baille", "Julien Marchand",
-            "Uini Atonio", "Cameron Woki", "Anthony Jelonch", "Peato Mauvaka", "Melvyn Jaminet",
-            "Gabin Villière", "Maxime Lucu", "Louis Bielle-Biarrey", "Yoram Moefana", "Thibaud Flament",
-            "François Cros", "Paul Willemse", "Bernard Le Roux", "Jonathan Danty", "Arthur Vincent",
-            "Sipili Falatea", "Reda Wardi", "Romain Taofifénua", "Sekou Macalou", "Baptiste Couilloud",
-            "Nolann Le Garrec", "Antoine Hastoy", "Posolo Tuilagi", "Léo Barré", "Emilien Gailleton",
+        const themesData = {
+            "1": { name: "1. ANIMAUX & NATURE - À la montagne", type: "image", items: ["Marmotte", "Chamois", "Bouquetin", "Edelweiss", "Aigle royal", "Lynx", "Sapin", "Chalet", "Télésiège", "Marmotte des Alpes", "Loup", "Mouflon", "Gypaète barbu", "Tétras-lyre", "Chardons", "Mélèze", "Grotte de glace", "Raquettes à neige", "Avalanche", "Dahu"] },
+            "2": { name: "2. ANIMAUX & NATURE - Anatomie animale", type: "image", items: ["Nageoire", "Bec", "Griffes", "Trou de souffleur", "Carapace", "Tentacule", "Cornes", "Bois de cerf", "Plumes", "Ecailles", "Moustaches de chat", "Truffe", "Giron", "Sabot", "Trompe d'éléphant", "Poches marsupiales", "Ergot", "Jabot", "Crinière", "Fanons de baleine"] },
+            "3": { name: "3. ANIMAUX & NATURE - Animaux sauvages", type: "image", items: ["Lion", "Tigre", "Éléphant", "Girafes", "Zèbre", "Hippopotame", "Rhinocéros", "Guépard", "Panda géant", "Koala", "Kangourou", "Gorille", "Ours polaire", "Loup", "Loup gris", "Hyène", "Jaguar", "Lémurien", "Paresseux", "Caméléon"] },
+            "4": { name: "4. ANIMAUX & NATURE - Chiens & chats célèbres", type: "image", items: ["Snoopy", "Garfield", "Milou", "Rintintin", "Idéfix", "Gromit", "Scooby-Doo", "Beethoven (chien)", "Pluto (Disney)", "Lassie", "Dingo", "Le Chat potté", "Sylvestre le chat", "Grumpy Cat", "Idefix", "Volt (Disney)", "Bill (Boule et Bill)", "Félix le Chat", "Odie", "Crocmou"] },
+            "5": { name: "5. ANIMAUX & NATURE - Fleurs & plantes", type: "image", items: ["Rose", "Tulipe", "Tournesol", "Orchidées", "Lilas", "Marguerite", "Coquelicot", "Muguet", "Pivoine", "Lavande", "Jasmin", "Nénuphar", "Bambou", "Cactus", "Bonsaï", "Aloe vera", "Pissenlit", "Eucalyptus", "Géranium", "Pensée"] },
+            "6": { name: "6. ANIMAUX & NATURE - Fruits exotiques", type: "image", items: ["Ananas", "Mangue", "Fruit de la passion", "Litchi", "Pitaya", "Papaye", "Carambole", "Ramboutan", "Durian", "Mangoustan", "Noix de coco", "Kaki", "Maracudja", "Physalis", "Kumquat", "Goyave", "Grenade (fruit)", "Corossol", "Kiwi", "Litchi"] },
+            "7": { name: "7. ANIMAUX & NATURE - Monde animal", type: "image", items: ["Dauphin", "Orque", "Baleine bleue", "Requin blanc", "Tortue marine", "Flamant rose", "Pelican", "Toucan", "Colibri", "Chouette", "Penguin", "Manchot", "Méduse", "Pieuvre", "Hippocampe", "Caméléon", "Iguane", "Crocodile", "Salamandre", "Castor"] },
+            "8": { name: "8. ART & LITTÉRATURE - Contes de fées", type: "image", items: ["Cendrillon", "Blanche-Neige", "Le Petit Chaperon rouge", "La Belle au bois dormant", "Boucle d'or", "Hansel et Gretel", "Pinocchio", "Le Petit Poucet", "Barbe Bleue", "La Petite Sirène", "Rip Van Winkle", "Riponce", "Jack et le Haricot magique", "Le Joueur de flûte de Hamelin", "Le Vaillant Petit Tailleur", "Peau d'âne", "La Belle et la Bête", "Le Chat botté", "Le Vilain Petit Canard", "Les Trois Petits Cochons"] },
+            "9": { name: "9. ART & LITTÉRATURE - Croyances & superstitions", type: "image", items: ["Trèfle à quatre feuilles", "Fer à cheval", "Chat noir", "Miroir brisé", "Echelle", "Pte de lapin", "Attrape-rêves", "Œil de Fatma", "Nombre 13", "Parapluie ouvert à l'intérieur", "Sel renversé", "Coccinelle", "Vendredi 13", "Boule de cristal", "Arbre à souhaits", "Trèfle", "Fer à cheval", "Maneki-neko", "Main de Fatma", "Sorcière"] },
+            "10": { name: "10. ART & LITTÉRATURE - Littérature", type: "image", items: ["Victor Hugo", "Émile Zola", "Molière", "Jules Verne", "Marcel Proust", "Albert Camus", "Jean de La Fontaine", "Voltaire", "William Shakespeare", "Charles Baudelaire", "Antoine de Saint-Exupéry", "Honoré de Balzac", "Alexandre Dumas", "Arthur Rimbaud", "Paul Verlaine", "George Sand", "Agatha Christie", "Colette", "Gustave Flaubert", "Guy de Maupassant"] },
+            "11": { name: "11. ART & LITTÉRATURE - Matériel d'artistes", type: "image", items: ["Chevalet", "Palette de peinture", "Pinceau", "Fusain", "Gouache", "Aquarelle", "Toile à peindre", "Crayon de couleur", "Spatule", "Argile", "Ciseau de sculpteur", "Pastel", "Encre de Chine", "Taile-crayon", "Gomme neet", "Compas", "Fixatif", "Vernis", "Règle", "Mannequin en bois"] },
+            "12": { name: "12. ART & LITTÉRATURE - Œuvres d'art", type: "image", items: ["La Joconde", "La Nuit étoilée", "La Cène", "La Naissance de Vénus", "Le Penseur", "Guernica", "La Jeune Fille à la perle", "Le Cri", "Les Nymphéas", "La Liberté guidant le peuple", "Venus de Milo", "Victoire de Samothrace", "Impression, soleil levant", "Radeau de La Méduse", "La Fille au ballon", "La Création d'Adam", "David (Michel-Ange)", "Le Baiser (Klimt)", "Les Glaneuses", "Autoportrait de van Gogh"] },
+            "13": { name: "13. ART & LITTÉRATURE - Résumés de livres", type: "text", items: [
+                {q: "Un pilote en panne dans le désert rencontre un petit prince venu d'une autre planète.", a: "Le Petit Prince"},
+                {q: "Un bossu sonneur de cloches tombe amoureux d'une Esméralda à Paris.", a: "Notre-Dame de Paris"},
+                {q: "Un jeune homme passe un pacte avec le diable pour garder sa jeunesse éternelle.", a: "Le Portrait de Dorian Gray"},
+                {q: "Quatre filles du docteur March grandissent pendant la guerre de Sécession.", a: "Les Quatre Filles du docteur March"},
+                {q: "Un marin naufragé survit des années sur une île déserte avec Vendredi.", a: "Robinson Crusoé"}
+            ]},
+            "14": { name: "14. CÉLÉBRITÉS - Célébrités (H/F)", type: "image", items: ["Beyoncé", "Brad Pitt", "Leonardo DiCaprio", "Taylor Swift", "Rihanna", "Tom Cruise", "Angelina Jolie", "Lady Gaga", "Will Smith", "Jennifer Aniston", "Keanu Reeves", "Dwayne Johnson", "Margot Robbie", "Johnny Depp", "Zendaya", "Barack Obama", "Elon Musk", "Cristiano Ronaldo", "Lionel Messi", "Kim Kardashian"] },
+            "15": { name: "15. CÉLÉBRITÉS - Duos célèbres", type: "image", items: ["Omar et Fred", "Eric et Ramzy", "Laurel et Hardy", "Stone et Charden", "Shirley et Dino", "Mcfly et Carlito", "Bigflo et Oli", "Kev Adams et Gad Elmaleh", "Dupont et Dupond", "Asterix et Obelix", "Batman et Robin", "Sherlock Holmes et Docteur Watson", "Bonny and Clyde", "Barbie et Ken", "Lennon et McCartney", "Simon & Garfunkel", "Daft Punk", "Kad et Olivier", "Chevallier et Laspalès", "Fontaine et Chancel"] },
+            "16": { name: "16. CÉLÉBRITÉS - Looks de célébrités (Coiffures)", type: "image", items: ["Marilyn Monroe", "Elvis Presley", "Amy Winehouse", "Brigitte Bardot", "David Bowie", "Afro Michael Jackson", "Bob Marley", "Tina Turner", "Sia", "Audrey Hepburn", "Beatles", "Grace Jones", "Rod Stewart", "Paul Polnareff", "Ariana Grande", "Jennifer Aniston", "Billie Eilish", "Donald Trump", "Boris Johnson", "Hulk Hogan"] },
+            "17": { name: "17. CÉLÉBRITÉS - Nationalités", type: "text", items: [
+                {q: "Penélope Cruz", a: "Espagnole"},
+                {q: "Ryan Gosling", a: "Canadienne"},
+                {q: "Hugh Jackman", a: "Australienne"},
+                {q: "Rihanna", a: "Barbadienne"},
+                {q: "Charlize Theron", a: "Sud-africaine"}
+            ]},
+            "18": { name: "18. CÉLÉBRITÉS - Personnalités françaises", type: "image", items: ["Teddy Riner", "Kylian Mbappé", "Thomas Pesquet", "Omar Sy", "Sophie Marceau", "Jean Reno", "Marion Cotillard", "Dany Boon", "Jean Dujardin", "Mylène Farmer", "Florence Foresti", "Jamel Debbouze", "Cyril Lignac", "Nagui", "Stephane Bern", "Mimi Mathy", "Vanessa Paradis", "Francis Cabrel", "Alain Delon", "Catherine Deneuve"] },
+            "19": { name: "19. CÉLÉBRITÉS - Stars d'internet", type: "image", items: ["Squeezie", "Inoxtag", "Mister V", "Mcfly et Carlito", "Lena Situations", "Jouxie", "HugoDecrypte", "Tiboinshape", "Jujufitcats", "Cyprien", "Norman fait des vidéos", "Michou (videaste)", "Seb la Frite", "Natoo", "Amixem", "LeBouseuh", "Doux", "PewDiePie", "MrBeast"] },
+            "20": { name: "20. CINÉMA - Acteurs (Français + étrangers)", type: "image", items: ["Alain Delon", "Jean-Paul Belmondo", "Louis de Funès", "Lino Ventura", "Jean Gabin", "Gérard Depardieu", "Christian Clavier", "Thierry Lhermitte", "Guillaume Canet", "Pierre Niney", "Robert De Niro", "Al Pacino", "Harrison Ford", "Tom Hanks", "Denzel Washington", "Morgan Freeman", "Samuel L. Jackson", "George Clooney", "Brad Pitt", "Johnny Depp"] },
+            "21": { name: "21. CINÉMA - Actrices (Françaises + étrangères)", type: "image", items: ["Brigitte Bardot", "Catherine Deneuve", "Isabelle Huppert", "Juliette Binoche", "Sophie Marceau", "Marion Cotillard", "Audrey Tautou", "Lea Seydoux", "Virginie Efira", "Adèle Exarchopoulos", "Meryl Streep", "Julia Roberts", "Scarlett Johansson", "Kate Winslet", "Emma Stone", "Natalie Portman", "Nicole Kidman", "Cate Blanchett", "Jennifer Lawrence", "Viola Davis"] },
+            "22": { name: "22. CINÉMA - Biopics", type: "image", items: ["La Môme", "Bohemian Rhapsody", "Oppenheimer (film)", "Elvis (film, 2022)", "Gandhi (film)", "Ray (film)", "Walk the Line", "Cloclo (film)", "Ali (film, 2001)", "Le Discours d'un roi", "The Social Network", "L'Instinct mortel", "L'Homme aux mille visages", "Rocketman", "Lincoln (film, 2012)", "L'Affaire Goldman", "Iron Claw", "Bob Marley: One Love", "Niki (film)", "YSL (film)"] },
+            "23": { name: "23. CINÉMA - Films cultes", type: "image", items: ["Titanic (film, 1997)", "Avatar (film, 2009)", "Star Wars", "Jurassic Park (film)", "Harry Potter à l'école des sorciers", "Le Seigneur des anneaux : La Communauté de l'anneau", "Pulp Fiction", "Forrest Gump", "Le Fabuleux Destin d'Amélie Poulain", "Les Visiteurs", "Le Corniaud", "La Grande Vadrouille", "Le Père Noël est une ordure", "Les Bronzés font du ski", "Intouchables", "La Cité de la peur", "Taxi (film, 1998)", "Bienvenue chez les Ch'tis", "Retour vers le futur", "E.T., l'extra-terrestre"] },
+            "24": { name: "24. CINÉMA - Lauréats des Oscars", type: "image", items: ["Cillian Murphy", "Michelle Yeoh", "Will Smith", "Joaquin Phoenix", "Rami Malek", "Gary Oldman", "Casey Affleck", "Leonardo DiCaprio", "Eddie Redmayne", "Matthew McConaughey", "Jean Dujardin", "Emma Stone", "Jessica Chastain", "Olivia Colman", "Frances McDormand", "Brie Larson", "Julianne Moore", "Cate Blanchett", "Jennifer Lawrence", "Meryl Streep"] },
+            "25": { name: "25. CINÉMA - Méchants de cinéma", type: "image", items: ["Dark Vador", "Joker (comics)", "Voldemort", "Hannibal Lecter", "Sauron", "Thanos", "Norman Bates", "Freddy Krueger", "Jason Voorhees", "Pennywise", "Agent Smith", "Gollum", "Cruella d'Enfer", "Maléfique", "Scar (Le Roi lion)", "Kylo Ren", "Hans Landa", "Jack Torrance", "Darth Maul", "Bane"] },
+            "26": { name: "26. CINÉMA - Musiques de films", type: "text", items: [
+                {q: "Compositeur de Star Wars, Harry Potter et Indiana Jones", a: "John Williams"},
+                {q: "Compositeur de Le Bon, la Brute et le Truand et Gladiator", a: "Ennio Morricone"},
+                {q: "Compositeur de Inception, Interstellar et Le Roi Lion", a: "Hans Zimmer"},
+                {q: "Compositeur des Musiques de films de Tim Burton", a: "Danny Elfman"},
+                {q: "Compositeur du Fabuleux Destin d'Amélie Poulain", a: "Yann Tiersen"}
+            ]},
+            "27": { name: "27. CINÉMA - Réalisateurs (H/F)", type: "image", items: ["Steven Spielberg", "Christopher Nolan", "Quentin Tarantino", "Martin Scorsese", "Alfred Hitchcock", "James Cameron", "Stanley Kubrick", "Tim Burton", "Luc Besson", "François Truffaut", "Jean-Luc Godard", "Claude Lelouch", "Denis Villeneuve", "Greta Gerwig", "Sofia Coppola", "Agnès Varda", "Justine Triet", "Woody Allen", "Pedro Almodóvar", "Ridley Scott"] },
+            "28": { name: "28. CINÉMA - Répliques de films", type: "text", items: [
+                {q: "« On ne laisse pas Bébé dans un coin. »", a: "Dirty Dancing"},
+                {q: "« Vous voulez un whisky ? — Juste un doigt. — Vous ne voulez pas un whisky d'abord ? »", a: "La Cité de la peur"},
+                {q: "« Que la Force soit avec toi. »", a: "Star Wars"},
+                {q: "« C'est à moi que tu parles ? »", a: "Taxi Driver"},
+                {q: "« La vie, c’est comme une boîte de chocolats... »", a: "Forrest Gump"}
+            ]},
+            "29": { name: "29. CINÉMA - Titres de films", type: "image", items: ["Inception", "Matrix", "Fight Club", "Gladiator", "Interstellar", "Shining", "Les Dents de la mer", "Psychose", "Scarface", "Le Parrain", "Le Cinquième Élément", "La Ligne verte", "Sixième Sens", "La Vita è bella", "The Truman Show", "Memento", "Whiplash", "La La Land", "Parasite (film)", "Oppenheimer (film)"] },
+            "30": { name: "30. CUISINE - À l'apéro", type: "image", items: ["Chips", "Saucisson", "Cacahuètes", "Olives", "Gressins", "Hummus", "Guacamole", "Tapenade", "Tzatziki", "Pistaches", "Noix de cajou", "Quiche", "Feuilleté à la saucisse", "Bruschetta", "Sardines en boîte", "Mojito", "Kir", "Spritz", "Sangria", "Pastis"] },
+            "31": { name: "31. CUISINE - Chocolat", type: "image", items: ["Tablette de chocolat", "Praliné", "Truffes au chocolat", "Mousse au chocolat", "Fondant au chocolat", "Éclair au chocolat", "Pain au chocolat", "Brownie", "Chocolat chaud", "Fondue au chocolat", "Chocolat blanc", "Chocolat au lait", "Chocolat noir", "Nutella", "Kinder Surprise", "Ferrero Rocher", "Mon Chéri", "Toblerone", "M&M's", "KitKat"] },
+            "32": { name: "32. CUISINE - Dans la cuisine", type: "image", items: ["Casserole", "Poêle", "Fouet (cuisine)", "Spatule", "Épluche-Légumes", "Planche à découper", "Passoire", "Rouleau à pâtisserie", "Mixeur", "Balance de cuisine", "Râpe (ustensile)", "Presse-ail", "Louche", "Moule à gâteau", "Thermomix", "Cocotte-minute", "Four", "Micro-ondes", "Grille-pain", "Cafetière"] },
+            "33": { name: "33. CUISINE - Garnitures de pizzas", type: "image", items: ["Mozzarella", "Pepperoni", "Champignon de Paris", "Jambon", "Ananas", "Olives noires", "Anchois", "Roquette", "Chèvre (fromage)", "Chorizo", "Sauce tomate", "Basilic", "Artichaut", "Lardons", "Œuf", "Gorgonzola", "Câpres", "Oignons", "Saumon fumé", "Poivron"] },
+            "34": { name: "34. CUISINE - Pommes de terre (Recettes)", type: "image", items: ["Frites", "Purée de pommes de terre", "Gratin dauphinois", "Pomme dauphine", "Pomme noisette", "Rösti", "Tartiflette", "Hachis parmentier", "Raclette", "Gnocchi", "Patatas bravas", "Potato wedges", "Pomme au four", "Chips", "Aligot", "Trufade", "Salade de pommes de terre", "Chips de patate douce", "Pommes duchesse", "Crispy potato"] },
+            "35": { name: "35. CUISINE - Produits laitiers (Logos)", type: "image", items: ["Danone", "Yoplait", "Président (marque)", "La vache qui rit", "Babybel", "Kiri", "Elle & Vire", "Lactel", "Activia", "Actimel", "Michel et Augustin", "Saint-Môret", "Caprice des Dieux", "Cantalou", "Bridel", "Boursin", "Mamie Nova", "Candia", "Montebourg", "Sojasun"] },
+            "36": { name: "36. CUISINE - Recettes de cuisine", type: "image", items: ["Boeuf bourguignon", "Blanquette de veau", "Coq au vin", "Ratatouille", "Cassoulet", "Bouillabaisse", "Pot-au-feu", "Choucroute alsacienne", "Quiche lorraine", "Tartiflette", "Lasagnes", "Spaghetti bolognaise", "Paëlla", "Couscous", "Tajine", "Poulet au curry", "Risotto", "Fondue savoyarde", "Bourguignon", "Carbonara"] },
+            "37": { name: "37. GÉOGRAPHIE - Départements", type: "text", items: [
+                {q: "Préfecture : Marseille (Code : 13)", a: "Bouches-du-Rhône"},
+                {q: "Préfecture : Lyon (Code : 69)", a: "Rhône"},
+                {q: "Préfecture : Nice (Code : 06)", a: "Alpes-Maritimes"},
+                {q: "Préfecture : Toulouse (Code : 31)", a: "Haute-Garonne"},
+                {q: "Préfecture : Bordeaux (Code : 33)", a: "Gironde"}
+            ]},
+            "38": { name: "38. GÉOGRAPHIE - Fleuves", type: "image", items: ["La Seine", "La Loire", "Le Rhône", "La Garonne", "Le Rhin", "Le Danube", "La Tamise", "Le Nil", "L'Amazone", "Le Mississippi", "Le Gange", "Le Mékong", "Le Volga", "Le Saint-Laurent", "Le Colorado", "Le Zambèze", "Le Congo (fleuve)", "Le Yangtsé", "Le Tage", "L'Ebre"] },
+            "39": { name: "39. GÉOGRAPHIE - Géographie", type: "image", items: ["Mont Blanc", "Everest", "Grand Canyon", "Désert du Sahara", "Forêt amazonienne", "Chutes du Niagara", "Mont Fuji", "Baie d'Ha Long", "Chutes d'Iguazú", "Barrière de corail", "Ayers Rock", "Cap de Bonne-Espérance", "Mer Morte", "Volcan Vésuve", "Kilimandjaro", "Lac Baïkal", "Fjord", "Geysir", "Atoll", "Glacier"] },
+            "40": { name: "40. GÉOGRAPHIE - Pays", type: "image", items: ["France", "Italie", "Espagne", "Allemagne", "Royaume-Uni", "États-Unis", "Japon", "Chine", "Brésil", "Australie", "Canada", "Inde", "Égypte", "Mexique", "Russie", "Afrique du Sud", "Argentine", "Grèce", "Turquie", "Maroc"] },
+            "41": { name: "41. GÉOGRAPHIE - Royaume-Uni", type: "image", items: ["Big Ben", "Tower Bridge", "Palais de Buckingham", "London Eye", "Stonehenge", "Cabine téléphonique rouge", "Bus à double étage", "Drapeau du Royaume-Uni", "Drapeau de l'Écosse", "Kilt", "Garde royal britannique", "Loch Ness", "Château d'Édimbourg", "Tamise", "Hyde Park", "Piccadilly Circus", "Trafford Park", "Giant's Causeway", "Tartan", "Black Cab"] },
+            "42": { name: "42. GÉOGRAPHIE - Sites touristiques", type: "image", items: ["Tour Eiffel", "Statue de la Liberté", "Grande Muraille de Chine", "Machu Picchu", "Taj Mahal", "Colisée", "Pyramides de Gizeh", "Pétra", "Christ Rédempteur", "Opéra de Sydney", "Mont Saint-Michel", "Sagrada Família", "Acropole d'Athènes", "Burj Khalifa", "Château de Versailles", "Alhambra", "Chichén Itzá", "Pise", "Big Ben", "Empire State Building"] },
+            "43": { name: "43. GÉOGRAPHIE - Villes du monde", type: "image", items: ["Paris", "New York", "Londres", "Tokyo", "Rome", "Sydney", "Rio de Janeiro", "Venise", "Pékin", "Le Caire", "Dubaï", "Los Angeles", "Moscou", "Barcelone", "Berlin", "Amsterdam", "San Francisco", "Istanbul", "Bangkok", "Hong Kong"] },
+            "44": { name: "44. HISTOIRE - Événements à la une", type: "text", items: [
+                {q: "14 Juillet 1789", a: "Prise de la Bastille"},
+                {q: "6 Juin 1944", a: "Débarquement en Normandie"},
+                {q: "20 Juillet 1969", a: "Premier homme sur la Lune"},
+                {q: "9 Novembre 1989", a: "Chute du Mur de Berlin"},
+                {q: "12 Juillet 1998", a: "France championne du monde de football"}
+            ]},
+            "45": { name: "45. HISTOIRE - Mythologie", type: "image", items: ["Zeus", "Poséidon", "Hadès", "Athéna", "Aphrodite", "Hercule", "Achille", "Thor", "Odin", "Loki", "Anubis", "Osiris", "Sphinx", "Minotaure", "Centaure", "Pégase", "Phénix", "Méduse (mythologie)", "Cyclope", "Cerbère"] },
+            "46": { name: "46. HISTOIRE - Objets dans l'Histoire", type: "image", items: ["Pierre de Rosette", "Guillotine", "Astrolabe", "Code de Hammurabi", "Épée d'Excalibur", "Couronne d'épines", "Sarcophage", "Liaison télégraphique", "Cadran solaire", "Masque de Toutânkhamon", "Sainte Ampoule", "Tapisserie de Bayeux", "Oriflamme", "Bouclier romain", "Catapulte", "Suaire de Turin", "Gutenberg presse", "Armure de chevalier", "Vase de Soissons", "Buste de Néfertiti"] },
+            "47": { name: "47. HISTOIRE - Personnalités du XXe siècle", type: "image", items: ["Charles de Gaulle", "Winston Churchill", "Franklin D. Roosevelt", "John F. Kennedy", "Nelson Mandela", "Martin Luther King", "Mahatma Gandhi", "Mère Teresa", "Che Guevara", "Mao Zedong", "Albert Einstein", "Neil Armstrong", "Princess Diana", "Yasser Arafat", "Mikhail Gorbatchev", "Papa Jean-Paul II", "Indira Gandhi", "Rosa Parks", "Mustafa Kemal Atatürk", "Abbé Pierre"] },
+            "48": { name: "48. HISTOIRE - Sites historiques", type: "image", items: ["Mont Saint-Michel", "Château de Versailles", "Château de Chambord", "Pont du Gard", "Cité de Carcassonne", "Arènes de Nîmes", "Grotte de Lascaux", "Palais des Papes d'Avignon", "Alignements de Carnac", "Château de Chenonceau", "Basilique du Sacré-Cœur de Montmartre", "Sainte-Chapelle", "Panthéon (Paris)", "Arc de Triomphe", "Catacombes de Paris", "Château du Haut-Kœnigsbourg", "Domaine de Chantilly", "Château de Fontainebleau", "Phare d'Eckmühl", "D-Day Beaches"] },
+            "49": { name: "49. LANGUE - Anagrammes", type: "text", items: [
+                {q: "GARONNE", a: "ORANGE"},
+                {q: "MANOIR", a: "ROMAIN"},
+                {q: "PIRATE", a: "PATRIE"},
+                {q: "CHIEN", a: "NICHE"},
+                {q: "GUERISON", a: "SOIGNEUR"}
+            ]},
+            "50": { name: "50. LANGUE - Dictons & expressions", type: "text", items: [
+                {q: "En avril, ne te découvre pas d'un fil...", a: "...en mai, fais ce qu'il te plaît."},
+                {q: "Qui sème le vent...", a: "...récolte la tempête."},
+                {q: "Passez une pomme de terre...", a: "...se renvoyer la balle"},
+                {q: "Mettre la charrue...", a: "...avant les bœufs."},
+                {q: "Pierre qui roule...", a: "...n'amasse pas mousse."}
+            ]},
+            "51": { name: "51. LANGUE - Langage SMS", type: "text", items: [
+                {q: "MDR", a: "Mort de rire"},
+                {q: "PTDR", a: "Pété de rire"},
+                {q: "SLT", a: "Salut"},
+                {q: "STP / SVP", a: "S'il te plaît / S'il vous plaît"},
+                {q: "TKT", a: "T'inquiète (ne t'inquiète pas)"}
+            ]},
+            "52": { name: "52. LANGUE - Langue française (noms communs)", type: "image", items: ["Aéroplane", "Automobile", "Téléphone", "Bicyclette", "Ordinateur", "Télévision", "Livre", "Stylo", "Horloge", "Parapluie", "Miroir", "Bouteille", "Lunettes", "Lampe", "Chaise", "Table", "Fenêtre", "Porte", "Clé", "Sac"] },
+            "53": { name: "53. LANGUE - Mots composés", type: "image", items: ["Arc-en-ciel", "Chou-fleur", "Garde-manger", "Porte-monnaie", "Casse-noisette", "Oiseau-mouche", "Tire-bouchon", "Gratte-ciel", "Sèche-cheveux", "Lave-vaisselle", "Porte-clés", "Pèse-personne", "Saut-de-mouton", "Rendez-vous", "Sous-marin", "Tourne-disque", "Espace-temps", "Esuie-glace", "Pince-linge", "Casse-tête"] },
+            "54": { name: "54. LANGUE - Mots croisés", type: "text", items: [
+                {q: "Astre de la nuit (3 lettres)", a: "Lune"},
+                {q: "Petit rongeur des champs (4 lettres)", a: "Mulot"},
+                {q: "Métal précieux jaune (2 lettres)", a: "Or"},
+                {q: "Capitale de la France (5 lettres)", a: "Paris"},
+                {q: "Chef-lieu d'un canton (5 lettres)", a: "Bourg"}
+            ]},
+            "55": { name: "55. LANGUE - Proverbes & expressions", type: "text", items: [
+                {q: "Rien ne sert de courir...", a: "...il faut partir à point."},
+                {q: "L'habit ne fait pas...", a: "...le moine."},
+                {q: "Les chiens aboient...", a: "...la caravane passe."},
+                {q: "L'union fait...", a: "...la force."},
+                {q: "Après la pluie...", a: "...le beau temps."}
+            ]},
+            "56": { name: "56. LANGUE - Verlan", type: "text", items: [
+                {q: "C'est reuch", a: "C'est cher"},
+                {q: "Un keuf", a: "Un flic"},
+                {q: "C'est chanmé", a: "C'est méchant (super)"},
+                {q: "Un meuf", a: "Une femme"},
+                {q: "C'est chelou", a: "C'est louche"}
+            ]},
+            "57": { name: "57. LOISIRS & MODE - Créateurs de mode", type: "image", items: ["Coco Chanel", "Christian Dior", "Yves Saint Laurent", "Karl Lagerfeld", "Jean Paul Gaultier", "Hubert de Givenchy", "Gianni Versace", "Giorgio Armani", "Louis Vuitton", "Guccio Gucci", "Paco Rabanne", "Thierry Mugler", "Christian Louboutin", "Virgil Abloh", "Donatella Versace", "Ralph Lauren", "Calvin Klein", "Tommy Hilfiger", "Jacquemus", "Alexander McQueen"] },
+            "58": { name: "58. LOISIRS & MODE - Logos de jeux & jouets", type: "image", items: ["Lego", "Barbie", "Monopoly", "Playmobil", "Hot Wheels", "Nerf (marque)", "Uno (jeu)", "Rubik's Cube", "Pokémon", "Nintendo", "PlayStation", "Xbox", "Scrabble", "Trivial Pursuit", "La Bonne Paye", "Fisher-Price", "Bandai", "Hasbro", "Ravensburger", "Djeco"] },
+            "59": { name: "59. LOISIRS & MODE - Marques de cosmétiques", type: "image", items: ["L'Oréal", "Sephora", "Nivea", "Lancôme", "Yves Rocher", "Chanel Beauty", "Dior Beauty", "Clarins", "Garnier", "Maybelline", "MAC Cosmetics", "Clinique", "Estée Lauder", "Kérastase", "Bioderma", "La Roche-Posay", "Avene", "Kiko Milano", "Nyx Professional Makeup", "Bourjois"] },
+            "60": { name: "60. LOISIRS & MODE - Mécanique", type: "image", items: ["Moteur à combustion", "Piston", "Bougie d'allumage", "Carburateur", "Boîte de vitesses", "Embrayage", "Amortisseur", "Disque de frein", "Alternateur", "Batterie au plomb", "Courroie de distribution", "Radiateur", "Pot d'échappement", "Turbo", "Vilebrequin", "Injecteur", "Pneu", "Jante", "Cardan", "Différentiel"] },
+            "61": { name: "61. LOISIRS & MODE - Vêtements & accessoires", type: "image", items: ["Jeans", "T-shirt", "Chemise", "Cravate", "Noeud papillon", "Chapeau", "Casquette", "Ceinture", "Écharpe", "Gants", "Lunettes de soleil", "Montre", "Sac à main", "Chaussures à talon", "Baskets", "Bottes", "Manteau", "Veste en cuir", "Chaussettes", "Maillot de bain"] },
+            "62": { name: "62. MUSIQUE - Chansons d'amour (francophones)", type: "text", items: [
+                {q: "« Car vois-tu, chaque jour je t'aime davantage, aujourd'hui plus qu'hier et bien moins que demain »", a: "L'Hymne à l'amour (Édith Piaf)"},
+                {q: "« Ne me quitte pas, il faut oublier, tout peut s'oublier... »", a: "Ne me quitte pas (Jacques Brel)"},
+                {q: "« Je l'aime à mourir »", a: "Je l'aime à mourir (Francis Cabrel)"},
+                {q: "« Savoir aimer, sans rien attendre en retour... »", a: "Savoir aimer (Florent Pagny)"},
+                {q: "« Que je t'aime, que je t'aime ! »", a: "Que je t'aime (Johnny Hallyday)"}
+            ]},
+            "63": { name: "63. MUSIQUE - Chanteurs francophones", type: "image", items: ["Johnny Hallyday", "Charles Aznavour", "Jacques Brel", "Serge Gainsbourg", "Claude François", "Michel Sardou", "Francis Cabrel", "Jean-Jacques Goldman", "Florent Pagny", "Pascal Obispo", "Stromae", "Gims", "Soprano (chanteur)", "Vianney", "Julien Doré", "M. Pokora", "Kendra Girac", "Slimane (chanteur)", "Amir Haddad", "Claudio Capéo"] },
+            "64": { name: "64. MUSIQUE - Groupes de musique", type: "image", items: ["The Beatles", "The Rolling Stones", "Queen", "ABBA", "AC/DC", "U2", "Coldplay", "Daft Punk", "Indochine (groupe)", "Téléphone (groupe)", "Nirvana (groupe)", "Metallica", "Pink Floyd", "Led Zeppelin", "Aerosmith", "Guns N' Roses", "Red Hot Chili Peppers", "Oasis (groupe)", "Depeche Mode", "Muse (groupe)"] },
+            "65": { name: "65. MUSIQUE - Guitaristes célèbres", type: "image", items: ["Jimi Hendrix", "Eric Clapton", "Jimmy Page", "Keith Richards", "Slash (musicien)", "Carlos Santana", "Mark Knopfler", "David Gilmour", "BB King", "Chuck Berry", "Eddie Van Halen", "Angus Young", "Brian May", "Jeff Beck", "Prince (musicien)", "George Harrison", "Kirk Hammett", "Kurt Cobain", "Matthieu Chedid", "Jean-Felix Lalanne"] },
+            "66": { name: "66. MUSIQUE - Musique des années 80", type: "image", items: ["Michael Jackson", "Madonna", "Prince (musicien)", "Whitney Houston", "Wham!", "George Michael", "Cyndi Lauper", "Indochine (groupe)", "Desireless", "Partenaire Particulier", "Jeanne Mas", "Lio", "Daniel Balavoine", "Jean-Jacques Goldman", "Michel Berger", "France Gall", "Renaud", "Téléphone (groupe)", "A-ha", "Depeche Mode"] },
+            "67": { name: "67. MUSIQUE - N°1 du Top 50", type: "text", items: [
+                {q: "Premier n°1 de l'histoire du Top 50 en 1984 avec « Besoin de rien, envie de toi »", a: "Peter et Sloane"},
+                {q: "Tube de l'été 1989 par Kaoma", a: "La Lambada"},
+                {q: "Tube de 1996 par Los del Río", a: "Macarena"},
+                {q: "Chanson d'O-Zone n°1 en 2004", a: "Dragostea Din Tei"},
+                {q: "Tube de Stromae n°1 en 2010", a: "Alors on danse"}
+            ]},
+            "68": { name: "68. MUSIQUE - Prénoms en chansons", type: "text", items: [
+                {q: "« Aline, pour qu'elle revienne... »", a: "Aline (Christophe)"},
+                {q: "« Nathalie, mon guide... »", a: "Nathalie (Gilbert Bécaud)"},
+                {q: "« Lucile, ne fait pas ça... »", a: "Lucille (Michel Jonasz)"},
+                {q: "« Lucie, c'est moi que voilà... »", a: "Lucie (Pascal Obispo)"},
+                {q: "« Oh Roxanne ! »", a: "Roxanne (The Police)"}
+            ]},
+            "69": { name: "69. MUSIQUE - Titres de chansons", type: "text", items: [
+                {q: "« All I Want for Christmas Is You »", a: "Mariah Carey"},
+                {q: "« Shape of You »", a: "Ed Sheeran"},
+                {q: "« Thriller »", a: "Michael Jackson"},
+                {q: "« Bohemian Rhapsody »", a: "Queen"},
+                {q: "« Imagine »", a: "John Lennon"}
+            ]},
+            "70": { name: "70. MUSIQUE - Tubes des années 2000", type: "image", items: ["Alizée", "Kyo (groupe)", "Yannick (chanteur)", "Lorie", "Tragédie (groupe)", "O-Zone", "Las Ketchup", "Gregory Lemarchal", "Diam's", "Fatal Bazooka", "Christophe Maé", "Mika (chanteur)", "Rihanna", "Beyoncé", "Britney Spears", "Shakira", "Lady Gaga", "Black Eyed Peas", "Eminem", "David Guetta"] },
+            "71": { name: "71. SCIENCES - Biologie", type: "image", items: ["ADN", "Cellule (biologie)", "Microscope", "Bactérie", "Virus", "Squelette humain", "Cœur humain", "Cerveau humain", "Poumons", "Système nerveux", "Globule rouge", "Neurone", "Chloroplaste", "Mitose", "Protéine", "Gène", "Système digestif", "Peau humaine", "Bassin (anatomie)", "Rein"] },
+            "72": { name: "72. SCIENCES - Calcul mental", type: "text", items: [
+                {q: "12 × 12", a: "144"},
+                {q: "15% de 200", a: "30"},
+                {q: "7 × 8", a: "56"},
+                {q: "250 ÷ 5", a: "50"},
+                {q: "99 + 18", a: "117"}
+            ]},
+            "73": { name: "73. SCIENCES - Grandeurs scientifiques", type: "text", items: [
+                {q: "Unité de mesure de la tension électrique", a: "Volt (V)"},
+                {q: "Unité de mesure de la puissance", a: "Watt (W)"},
+                {q: "Unité de mesure de la fréquence", a: "Hertz (Hz)"},
+                {q: "Unité de mesure de la masse", a: "Kilogramme (kg)"},
+                {q: "Unité de mesure de la température absolue", a: "Kelvin (K)"}
+            ]},
+            "74": { name: "74. SCIENCES - Internet", type: "image", items: ["Google", "Facebook", "YouTube", "Instagram", "TikTok", "X (réseau social)", "Wikipedia", "Amazon", "Netflix", "WhatsApp", "Spotify", "LinkedIn", "Twitch", "Discord", "Reddit", "Pinterest", "Snapchat", "ChatGPT", "Zoom (logiciel)", "eBay"] },
+            "75": { name: "75. SCIENCES - Métiers médicaux", type: "image", items: ["Chirurgien", "Médecin généraliste", "Infirmier", "Dentiste", "Pharmacien", "Kinésithérapeute", "Sage-femme", "Radiologue", "Pédiatre", "Ophtalmologue", "Cardiologue", "Dermatologue", "Psychiatre", "Brancardier", "Ambulancier", "Veterinaire", "Anesthésiste", "Orthophoniste", "Opticien", "Aide-soignant"] },
+            "76": { name: "76. SPORT - Champions du monde", type: "image", items: ["Usain Bolt", "Michael Phelps", "Lionel Messi", "Kylian Mbappé", "Lewis Hamilton", "Roger Federer", "Rafael Nadal", "Novak Djokovic", "Teddy Riner", "Martin Fourcade", "Antoine Dupont", "Simone Biles", "Serena Williams", "Katie Ledecky", "Max Verstappen", "LeBron James", "Stephen Curry", "Armand Duplantis", "Tadej Pogačar", "Remco Evenepoel"] },
+            "77": { name: "77. SPORT - Équipements sportifs", type: "image", items: ["Ballon de football", "Ballon de basket-ball", "Balle de tennis", "Raquette de tennis", "Volant (badminton)", "Gant de boxe", "Club de golf", "Palet de hockey", "Kimono", "Casque de vélo", "Skateboard", "Paire de skis", "Planche de surf", "Tapis de yoga", "Altères", "Protège-dents", "Crampons", "Nez de pincement", "Maillot de bain", "Sifflet d'arbitre"] },
+            "78": { name: "78. SPORT - Équipes nationales de foot", type: "image", items: ["Équipe de France de football", "Équipe du Brésil de football", "Équipe d'Argentine de football", "Équipe d'Allemagne de football", "Équipe d'Espagne de football", "Équipe d'Italie de football", "Équipe d'Angleterre de football", "Équipe du Portugal de football", "Équipe des Pays-Bas de football", "Équipe de Belgique de football", "Équipe du Maroc de football", "Équipe du Sénégal de football", "Équipe de Croatie de football", "Équipe du Japon de football", "Équipe des États-Unis masculine de soccer", "Équipe du Mexique de football", "Équipe de Colombie de football", "Équipe d'Uruguay de football", "Équipe d'Algérie de football", "Équipe de Côte d'Ivoire de football"] },
+            "79": { name: "79. SPORT - Jeux olympiques (villes hôtes)", type: "image", items: ["Paris", "Athènes", "Londres", "Pékin", "Tokyo", "Rio de Janeiro", "Sydney", "Atlanta", "Barcelone", "Los Angeles", "Moscou", "Rome", "Berlin", "Seoul", "Montréal", "Munich", "Chamonix-Mont-Blanc", "Vancouver", "Sochi", "Salt Lake City"] },
+            "80": { name: "80. SPORT - Joueurs de rugby", type: "image", items: ["Antoine Dupont", "Romain Ntamack", "Thomas Ramos", "Damian Penaud", "Gregory Alldritt", "Charles Ollivon", "Gaël Fickou", "Mathieu Jalibert", "Cyril Baille", "Julien Marchand", "Uini Atonio", "Cameron Woki", "Anthony Jelonch", "Peato Mauvaka", "Melvyn Jaminet", "Gabin Villière", "Maxime Lucu", "Louis Bielle-Biarrey", "Thibaud Flament", "François Cros", "Sébastien Chabal", "Thierry Dusautoir", "Frédéric Michalak", "Vincent Clerc", "Fabien Pelous", "Christophe Dominici", "Raphaël Ibañez", "Imanol Harinordoquy", "Dimitri Yachvili", "Jonny Wilkinson", "Dan Carter", "Bryan Habana", "Siya Kolisi", "Cheslin Kolbe", "Jonah Lomu", "Richie McCaw", "Brian O'Driscoll", "Faf de Klerk", "Beauden Barrett", "Ange Capuozzo"] },
+            "81": { name: "81. SPORT - Sportifs français", type: "image", items: ["Kylian Mbappé", "Antoine Dupont", "Teddy Riner", "Victor Wembanyama", "Clarisse Agbegnenou", "Leon Marchand", "Martin Fourcade", "Renaud Lavillenie", "Kevin Mayer", "Florent Manaudou", "Estelle Mossely", "Julian Alaphilippe", "Thibaut Pinot", "Sebastien Loeb", "Sebastien Ogier", "Karim Benzema", "Antoine Griezmann", "Zinedine Zidane", "Tony Parker", "Amélie Mauresmo"] },
+            "82": { name: "82. SPORT - Surnoms dans le sport", type: "text", items: [
+                {q: "« La Puce » (La Pulga) au football", a: "Lionel Messi"},
+                {q: "« King James » au basket-ball", a: "LeBron James"},
+                {q: "« La Foudre » (Lightning) en athlétisme", a: "Usain Bolt"},
+                {q: "« L'Anesthésiste » ou « L'Homme Anesthésiste » au rugby", a: "Sébastien Chabal"},
+                {q: "« Zizou » au football", a: "Zinédine Zidane"}
+            ]},
+            "83": { name: "83. SPORT - Terrains de sport", type: "image", items: ["Stade de France", "Parc des Princes", "Stade Vélodrome", "Roland-Garros", "Wimbledon (tenis)", "Maracanã", "Camp Nou", "Santiago-Bernabéu", "Wembley Stadium", "Madison Square Garden", "Staples Center", "Circuit des 24 Heures du Mans", "Monaco Circuit", "Allianz Arena", "Old Trafford", "San Siro", "Anfield", "Pikes Peak", "Stade Geoffroy-Guichard", "Stade Ernest-Wallon"] },
+            "84": { name: "84. TV & RADIO - Animateurs TV", type: "image", items: ["Nagui", "Stéphane Bern", "Cyril Hanouna", "Nikos Aliagas", "Jean-Luc Reichmann", "Denis Brogniart", "Camille Combal", "Yann Barthès", "Laurent Ruquier", "Michel Drucker", "Samuel Étienne", "Olivier Minne", "Arthur (animateur)", "Christophe Dechavanne", "Julien Courbet", "Thierry Ardisson", "Pascal Praud", "Gilles Bouleau", "Laurent Delahousse", "Cyril Féraud"] },
+            "85": { name: "85. TV & RADIO - Animatrices TV", type: "image", items: ["Karine Le Marchand", "Faustine Bollaert", "Sophie Davant", "Virginie Efira", "Alessandra Sublet", "Anne-Elisabeth Lemoine", "Anne-Claire Coudray", "Léa Salamé", "Evelyne Dhéliat", "Cristina Córdula", "Julia Vignali", "Valérie Damidot", "Daphné Bürki", "Carole Rousseau", "Claire Chazal", "Laurence Boccolini", "Karine Ferri", "Opélie Meunier", "Enora Malagré", "Flavie Flament"] },
+            "86": { name: "86. TV & RADIO - Génériques TV", type: "text", items: [
+                {q: "Générique de l'émission où des aventuriers tentent de survivre sur une île", a: "Koh-Lanta"},
+                {q: "Générique du jeu télévisé estival dans un fort en mer", a: "Fort Boyard"},
+                {q: "Générique de la série américaine avec 6 amis à New York (I'll Be There for You)", a: "Friends"},
+                {q: "Générique du JT de 20h sur TF1", a: "Le Journal de 20 Heures"},
+                {q: "Générique de la série télévisée Game of Thrones", a: "Game of Thrones"}
+            ]},
+            "87": { name: "87. TV & RADIO - Héros de dessins animés", type: "image", items: ["Mickey Mouse", "Donald Duck", "Bugs Bunny", "Homer Simpson", "Bob l'éponge", "Pikachu", "Astérix", "Tintin", "Sam le pompier", "Paw Patrol", "Miraculous (Ladybug)", "Goku", "Naruto Uzumaki", "Luffy", "Shrek", "Buzz l'Éclair", "Woody (Toy Story)", "Flash McQueen", "Minions", "Peppa Pig"] },
+            "88": { name: "88. TV & RADIO - Jurés d'émissions TV", type: "image", items: ["Philippe Etchebest", "Paul Pairet", "Hélène Darroze", "Glenn Viel", "Marianne James", "André Manoukian", "Chris Marques", "Fauve Hautot", "Eric Antoine", "Sugar Sammy", "Florent Pagny", "Zazie", "Mika (chanteur)", "Vianney", "Amel Bent", "Jenifer", "Lio", "Sinclair (musicien)", "Gilbert Rozon", "Kev Adams"] },
+            "89": { name: "89. TV & RADIO - Parents de fiction", type: "image", items: ["Homer Simpson", "Marge Simpson", "Lois Wilkerson (Malcolm)", "Hal Wilkerson (Malcolm)", "Uncle Phil (Le Prince de Bel-Air)", "Ned Stark", "Catelyn Stark", "Molly Weasley", "Arthur Weasley", "Bob Parr (Les Indestructibles)", "Helen Parr (Les Indestructibles)", "Danny Tanner (La Fête à la maison)", "Cliff Huxtable", "Claire Huxtable", "Jay Pritchett", "Gloria Pritchett", "Mufasa", "Sarabia (Le Roi Lion)", "Nemo's father Marlin", "Gargamel"] },
+            "90": { name: "90. TV & RADIO - Séries TV policières", type: "image", items: ["NCIS : Enquêtes spéciales", "Les Experts (série télévisée)", "Mentalist", "Castle (série télévisée)", "Bones", "Esprits criminels", "New York, unité spéciale", "Commissaire Moulin", "Navarro (série télévisée)", "Julie Lescaut", "Candice Renoir", "Capitaine Marleau", "Astrid et Raphaëlle", "Balthazar (série télévisée)", "HPI (série télévisée)", "Monk", "Columbo", "Sherlock (série télévisée)", "Dexter (série télévisée)", "True Detective"] },
+            "91": { name: "91. TV & RADIO - Slogans publicitaires", type: "text", items: [
+                {q: "« Parce que vous le valez bien »", a: "L'Oréal"},
+                {q: "« Just Do It »", a: "Nike"},
+                {q: "« Venez comme vous êtes »", a: "McDonald's"},
+                {q: "« Les produits laitiers sont nos amis pour la vie »", a: "Les Produits Laitiers"},
+                {q: "« C'est fort en chocolat »", a: "Nesquik"}
+            ]},
+            "92": { name: "92. VIE PRATIQUE - À l'aéroport", type: "image", items: ["Passeport", "Carte d'embarquement", "Valise", "Tapis roulant à bagages", "Tour de contrôle", "Piste d'atterrissage", "Détecteur de métaux", "Pilote d'avion", "Steward (aviation)", "Duty Free", "Écran d'affichage des vols", "Chariot à bagages", "Avion de ligne", "Manche à air", "Douane", "Embarquement", "Bagage à main", "Passerelle d'embarquement", "Gilet de sauvetage", "Masque à oxygen"] },
+            "93": { name: "93. VIE PRATIQUE - Années 90", type: "image", items: ["Tamagotchi", "Game Boy", "Cassette VHS", "Walkman", "Disquette", "K-Way", "Pog (jeu)", "Pins (insigne)", "Téléphone fixe à cadran", "Rollers en ligne", "Mininitel", "Furby", "Discman", "Pantalons baggys", "Super Nintendo", "PlayStation 1", "CD-ROM", "Giga Pet", "Yo-yo", "Tetris"] },
+            "94": { name: "94. VIE PRATIQUE - Couleurs", type: "image", items: ["Rouge", "Bleu", "Jaune", "Vert", "Orange (couleur)", "Violet", "Rose (couleur)", "Marron (couleur)", "Noir", "Blanc", "Gris", "Cyan", "Magenta", "Turquoise (couleur)", "Bordeaux (couleur)", "Beige", "Indigo (couleur)", "Jaune moutarde", "Vert kaki", "Or (couleur)"] },
+            "95": { name: "95. VIE PRATIQUE - Hiver", type: "image", items: ["Flocon de neige", "Bonhomme de neige", "Bonnet (couvre-chef)", "Écharpe", "Gants", "Luge", "Paire de skis", "Patins à glace", "Raclette", "Fondue savoyarde", "Chocolat chaud", "Cheminée", "Pelle à neige", "Verglas", "Stalactite de glace", "Doudoune", "Chalet", "Sapin de Noël", "Canons à neige", "Chaussettes de laine"] },
+            "96": { name: "96. VIE PRATIQUE - Lieux publics & commerces", type: "image", items: ["Boulangerie", "Boucherie", "Pharmacie", "Supermarché", "La Poste (entreprise française)", "Banque", "Bibliothèque", "Mairie", "Gare ferroviaire", "Aéroport", "Hôpital", "École", "Musée", "Cinéma", "Restaurant", "Café (établissement)", "Parc public", "Piscine municipale", "Commissariat de police", "Station-service"] },
+            "97": { name: "97. VIE PRATIQUE - Mariage", type: "image", items: ["Robe de mariée", "Costume de marié", "Alliance (bijou)", "Pièce montée", "Bouquet de mariée", "Voile de mariée", "Église", "Mairie", "Haute coiffure de mariée", "Coussin d'alliance", "Flûte de champagne", "Lancé de riz", "Voiture de mariés", "Faire-part de mariage", "Photographe de mariage", "Discours du témoin", "Ouverture de bal", "Liste de mariage", "Lune de miel", "Jarretière"] },
+            "98": { name: "98. VIE PRATIQUE - Objets du quotidien", type: "image", items: ["Clef", "Portefeuille", "Smartphone", "Lunettes", "Brosse à dents", "Peigne", "Serviette de bain", "Parapluie", "Ciseaux", "Stylo à bille", "Briquet", "Gourde", "Montre", "Casserole", "Balai", "Aspirateur", "Piles électriques", "Ampoule électrique", "Prise électrique", "Télécommande"] },
+            "99": { name: "99. VIE PRATIQUE - Sigles & acronymes", type: "text", items: [
+                {q: "SNCF", a: "Société Nationale des Chemins de fer Français"},
+                {q: "HLM", a: "Habitation à Loyer Modéré"},
+                {q: "RIB", a: "Relevé d'Identité Bancaire"},
+                {q: "TGV", a: "Train à Grande Vitesse"},
+                {q: "SAMU", a: "Service d'Aide Médicale Urgente"}
+            ]},
+            "100": { name: "100. VIE PRATIQUE - Véhicules & transports", type: "image", items: ["Voiture", "Autobus", "Métro", "Tramway", "Train", "TGV", "Avion", "Hélicoptère", "Bateau", "Vélo", "Mobylette", "Trottinette électrique", "Camion", "Tractor", "Sous-marin", "Fusée", "Taxi", "Ambulance", "Camion de pompiers", "Gondole"] },
+            "101": { name: "101. FINALE - Logos d'émissions TV", type: "image", items: ["Koh-Lanta", "Fort Boyard", "The Voice : La Plus Belle Voix", "Top Chef", "Touche pas à mon poste !", "Quotidien (émission)", "Les Douze Coups de midi", "N'oubliez pas les paroles !", "Danse avec les stars", "La France a un incroyable talent", "MasterChef", "Pékin Express", "L'amour est dans le pré", "C dans l'air", "Affaire conclue", "SLAM (jeu télévisé)", "Symphonissime", "La Carte aux trésors", "Intervilles", "Question pour un champion"] }
+        };
 
-            // Ancien Bleus & Légendes des années 2000-2010 (35)
-            "Sébastien Chabal", "Thierry Dusautoir", "Frédéric Michalak", "Vincent Clerc", "Fabien Pelous",
-            "Christophe Dominici", "Raphaël Ibañez", "Imanol Harinordoquy", "Dimitri Yachvili", "Aurélien Rougerie",
-            "Yannick Jauzion", "William Servat", "Morgan Parra", "François Trinh-Duc", "Maxime Médard",
-            "Louis Picamoles", "Lionel Nallet", "Pascal Papé", "Julien Bonnaire", "Sylvain Marconnet",
-            "Thomas Castaignède", "Benjamin Fall", "Florian Fritz", "Alexis Palisson", "Fulgence Ouedraogo",
-            "Marc Lièvremont", "Fabien Galthié", "Bernard Laporte", "Olivier Magne", "Abdelatif Benazzi",
-            "Emile Ntamack", "Denis Charvet", "Serge Blanco", "Philippe Sella", "Jean-Pierre Rives",
-
-            // Stars Internationales emblématiques (30)
-            "Jonny Wilkinson", "Dan Carter", "Bryan Habana", "Siya Kolisi", "Cheslin Kolbe",
-            "Finn Russell", "Ma'a Nonu", "Bakkies Botha", "Matt Giteau", "Sergio Parisse",
-            "Eben Etzebeth", "Jonah Lomu", "Richie McCaw", "Brian O'Driscoll", "Faf de Klerk",
-            "Beauden Barrett", "Ardie Savea", "Ange Capuozzo", "Alun Wyn Jones", "Shane Williams",
-            "Johnny Sexton", "Owen Farrell", "Maro Itoje", "Courtney Lawes", "Lukhanyo Am",
-            "Damian McKenzie", "Will Jordan", "Handré Pollard", "Michael Hooper", "Pablo Matera"
-        ];
-
-        const preloadedData = [];
+        let currentTheme = null;
+        let preloadedData = [];
         let currentIndex = 0;
         let isAnswerRevealed = false;
+        let favorites = JSON.parse(localStorage.getItem('tf_favorites')) || [];
 
+        const menuContainer = document.getElementById('menu-container');
+        const themeSelect = document.getElementById('theme-select');
         const loaderScreen = document.getElementById('loader-screen');
         const cardContainer = document.getElementById('card-container');
         const loadStatus = document.getElementById('load-status');
         const progressBar = document.getElementById('progress-bar');
-        
-        const imgElement = document.getElementById('player-img');
-        const nameElement = document.getElementById('player-name');
+        const loaderTitle = document.getElementById('loader-title');
+        const displayWrapper = document.getElementById('display-wrapper');
+        const itemAnswer = document.getElementById('item-answer');
         const counterElement = document.getElementById('counter');
+        const hardModeBtn = document.getElementById('hard-mode-btn');
+        const toggleFavBtn = document.getElementById('toggle-fav-btn');
+        const starIcon = document.getElementById('star-icon');
+
+        function updateFavoritesMenu() {
+            hardModeBtn.textContent = `🎯 Mode Révision (${favorites.length} enregistrés)`;
+            if (favorites.length === 0) {
+                hardModeBtn.style.opacity = '0.5';
+                hardModeBtn.style.cursor = 'not-allowed';
+            } else {
+                hardModeBtn.style.opacity = '1';
+                hardModeBtn.style.cursor = 'pointer';
+            }
+        }
+
+        function initMenu() {
+            themeSelect.innerHTML = "";
+            for (let key in themesData) {
+                let opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = themesData[key].name;
+                themeSelect.appendChild(opt);
+            }
+            updateFavoritesMenu();
+        }
 
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -175,43 +544,81 @@
             }
         }
 
-        async function fetchImageUrl(playerName) {
+        async function fetchImageUrl(query) {
             try {
-                const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(playerName)}`);
+                const res = await fetch(`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
                 const data = await res.json();
                 if (data.thumbnail && data.thumbnail.source) {
                     return data.thumbnail.source;
                 }
             } catch (e) {}
-            return "https://via.placeholder.com/320x400?text=Photo+non+disponible";
+            try {
+                const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data.thumbnail && data.thumbnail.source) {
+                    return data.thumbnail.source;
+                }
+            } catch (e) {}
+            return "https://via.placeholder.com/320x400?text=Image+Non+Trouvée";
         }
 
-        async function initGame() {
-            shuffle(players);
+        async function startTheme(onlyFavorites = false) {
+            if (onlyFavorites && favorites.length === 0) {
+                alert("Vous n'avez encore marqué aucune carte comme 'Dure' !");
+                return;
+            }
+
+            menuContainer.style.display = 'none';
+            loaderScreen.style.display = 'flex';
+            
+            preloadedData = [];
+            currentIndex = 0;
+
+            let itemsToLoad = [];
+
+            if (onlyFavorites) {
+                loaderTitle.textContent = "Chargement des cartes dures...";
+                itemsToLoad = [...favorites];
+            } else {
+                const selectedKey = themeSelect.value;
+                currentTheme = themesData[selectedKey];
+                loaderTitle.textContent = `Chargement de ${currentTheme.name}...`;
+
+                if (currentTheme.type === "image") {
+                    itemsToLoad = currentTheme.items.map(name => ({ name, type: "image", themeKey: selectedKey }));
+                } else {
+                    itemsToLoad = currentTheme.items.map(item => ({ q: item.q, a: item.a, type: "text", themeKey: selectedKey }));
+                }
+            }
+
+            shuffle(itemsToLoad);
+
             let loadedCount = 0;
             const batchSize = 5;
 
-            for (let i = 0; i < players.length; i += batchSize) {
-                const chunk = players.slice(i, i + batchSize);
-                const promises = chunk.map(async (name) => {
-                    const url = await fetchImageUrl(name);
-                    
-                    await new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = resolve;
-                        img.onerror = resolve;
-                        img.src = url;
-                    });
-
-                    return { name, url };
+            for (let i = 0; i < itemsToLoad.length; i += batchSize) {
+                const chunk = itemsToLoad.slice(i, i + batchSize);
+                const promises = chunk.map(async (item) => {
+                    if (item.type === "image") {
+                        const url = await fetchImageUrl(item.name);
+                        await new Promise((resolve) => {
+                            const img = new Image();
+                            img.onload = resolve;
+                            img.onerror = resolve;
+                            img.src = url;
+                        });
+                        return { id: item.name, question: item.name, answer: item.name, url: url, type: "image" };
+                    } else {
+                        return { id: item.a, question: item.q, answer: item.a, type: "text" };
+                    }
                 });
 
                 const results = await Promise.all(promises);
                 preloadedData.push(...results);
 
                 loadedCount += chunk.length;
-                loadStatus.textContent = `${loadedCount} / ${players.length} joueurs prêts`;
-                progressBar.style.width = `${(loadedCount / players.length) * 100}%`;
+                loadStatus.textContent = `${loadedCount} / ${itemsToLoad.length} éléments prêts`;
+                progressBar.style.width = `${(loadedCount / itemsToLoad.length) * 100}%`;
             }
 
             loaderScreen.style.display = 'none';
@@ -221,29 +628,88 @@
 
         function loadCard() {
             isAnswerRevealed = false;
-            nameElement.classList.remove('visible');
+            itemAnswer.classList.remove('visible');
             
             const currentItem = preloadedData[currentIndex];
-            nameElement.textContent = currentItem.name;
-            imgElement.src = currentItem.url;
+            itemAnswer.textContent = currentItem.answer;
             counterElement.textContent = `${currentIndex + 1} / ${preloadedData.length}`;
+
+            displayWrapper.innerHTML = "";
+
+            if (currentItem.type === "image") {
+                const img = document.createElement('img');
+                img.src = currentItem.url;
+                displayWrapper.appendChild(img);
+            } else {
+                const textDiv = document.createElement('div');
+                textDiv.className = "text-card";
+                textDiv.textContent = currentItem.question;
+                displayWrapper.appendChild(textDiv);
+            }
+
+            updateFavButtonUI();
+        }
+
+        function isCurrentFav() {
+            const currentItem = preloadedData[currentIndex];
+            return favorites.some(f => f.name === currentItem.id || f.a === currentItem.id);
+        }
+
+        function updateFavButtonUI() {
+            if (isCurrentFav()) {
+                toggleFavBtn.classList.add('active');
+                starIcon.textContent = "★";
+            } else {
+                toggleFavBtn.classList.remove('active');
+                starIcon.textContent = "☆";
+            }
+        }
+
+        function toggleFavorite() {
+            const currentItem = preloadedData[currentIndex];
+            
+            let existingIndex = favorites.findIndex(f => f.name === currentItem.id || f.a === currentItem.id);
+
+            if (existingIndex !== -1) {
+                favorites.splice(existingIndex, 1);
+            } else {
+                if (currentItem.type === "image") {
+                    favorites.push({ name: currentItem.id, type: "image" });
+                } else {
+                    favorites.push({ q: currentItem.question, a: currentItem.answer, type: "text" });
+                }
+            }
+
+            localStorage.setItem('tf_favorites', JSON.stringify(favorites));
+            updateFavButtonUI();
+            updateFavoritesMenu();
+        }
+
+        function returnToMenu() {
+            cardContainer.style.display = 'none';
+            menuContainer.style.display = 'block';
+            updateFavoritesMenu();
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.code === 'Space' && cardContainer.style.display === 'flex') {
-                event.preventDefault();
-                
-                if (!isAnswerRevealed) {
-                    nameElement.classList.add('visible');
-                    isAnswerRevealed = true;
-                } else {
-                    currentIndex = (currentIndex + 1) % preloadedData.length;
-                    loadCard();
+            if (cardContainer.style.display === 'flex') {
+                if (event.code === 'Space') {
+                    event.preventDefault();
+                    if (!isAnswerRevealed) {
+                        itemAnswer.classList.add('visible');
+                        isAnswerRevealed = true;
+                    } else {
+                        currentIndex = (currentIndex + 1) % preloadedData.length;
+                        loadCard();
+                    }
+                } else if (event.code === 'ArrowUp') {
+                    event.preventDefault();
+                    toggleFavorite();
                 }
             }
         });
 
-        initGame();
+        initMenu();
     </script>
 </body>
 </html>
