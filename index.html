@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcards Rugby - The Floor</title>
+    <title>Flashcards Joueurs de Rugby - The Floor</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -108,7 +108,7 @@
 <body>
 
     <div id="loader-screen">
-        <h2>Préchargement des photos...</h2>
+        <h2>Préchargement des 100 joueurs...</h2>
         <div id="load-status">0 / 100 joueurs prêts</div>
         <div class="progress-bar-container">
             <div id="progress-bar" class="progress-bar"></div>
@@ -128,30 +128,31 @@
 
     <script>
         const players = [
-            // Françaises
-            "Antoine Dupont", "Romain Ntamack", "Thierry Dusautoir", "Serge Blanco", "Frédéric Michalak", 
-            "Fabien Pelous", "Vincent Clerc", "Christophe Dominici", "Raphaël Ibañez", "Thomas Ramos",
-            "Damian Penaud", "Gregory Alldritt", "Charles Ollivon", "Gaël Fickou", "Mathieu Jalibert",
-            "Imanol Harinordoquy", "Philippe Sella", "Jean-Pierre Rives", "Dimitri Yachvili", "Aurélien Rougerie",
-            "Sébastien Chabal", "Yannick Jauzion", "William Servat", "Morgan Parra", "Uini Atonio",
-            "Cyril Baille", "Julien Marchand", "Camille Chat", "Anthony Jelonch", "Bernard Le Roux",
-            "François Trinh-Duc", "Maxime Médard", "Louis Picamoles", "Florian Fritz", "Sylvain Marconnet",
+            // XV de France Actuel & Stars Top 14 (35)
+            "Antoine Dupont", "Romain Ntamack", "Thomas Ramos", "Damian Penaud", "Gregory Alldritt",
+            "Charles Ollivon", "Gaël Fickou", "Mathieu Jalibert", "Cyril Baille", "Julien Marchand",
+            "Uini Atonio", "Cameron Woki", "Anthony Jelonch", "Peato Mauvaka", "Melvyn Jaminet",
+            "Gabin Villière", "Maxime Lucu", "Louis Bielle-Biarrey", "Yoram Moefana", "Thibaud Flament",
+            "François Cros", "Paul Willemse", "Bernard Le Roux", "Jonathan Danty", "Arthur Vincent",
+            "Sipili Falatea", "Reda Wardi", "Romain Taofifénua", "Sekou Macalou", "Baptiste Couilloud",
+            "Nolann Le Garrec", "Antoine Hastoy", "Posolo Tuilagi", "Léo Barré", "Emilien Gailleton",
 
-            // Internationales
-            "Jonny Wilkinson", "Dan Carter", "Richie McCaw", "Brian O'Driscoll", "Shane Williams",
-            "Siya Kolisi", "Cheslin Kolbe", "Eben Etzebeth", "Faf de Klerk", "Bryan Habana",
-            "Jonah Lomu", "Beauden Barrett", "Ardie Savea", "Aaron Smith", "Ma'a Nonu",
-            "Brodie Retallick", "Kieran Read", "David Pocock", "Michael Hooper", "George Gregan",
-            "Maro Itoje", "Owen Farrell", "Courtney Lawes", "Manu Tuilagi", "Alun Wyn Jones",
-            "George North", "Louis Rees-Zammit", "Finn Russell", "Stuart Hogg", "Ronan O'Gara",
-            "Johnny Sexton", "Tadhg Furlong", "Josh van der Flier", "Sergio Parisse", "Ange Capuozzo",
+            // Ancien Bleus & Légendes des années 2000-2010 (35)
+            "Sébastien Chabal", "Thierry Dusautoir", "Frédéric Michalak", "Vincent Clerc", "Fabien Pelous",
+            "Christophe Dominici", "Raphaël Ibañez", "Imanol Harinordoquy", "Dimitri Yachvili", "Aurélien Rougerie",
+            "Yannick Jauzion", "William Servat", "Morgan Parra", "François Trinh-Duc", "Maxime Médard",
+            "Louis Picamoles", "Lionel Nallet", "Pascal Papé", "Julien Bonnaire", "Sylvain Marconnet",
+            "Thomas Castaignède", "Benjamin Fall", "Florian Fritz", "Alexis Palisson", "Fulgence Ouedraogo",
+            "Marc Lièvremont", "Fabien Galthié", "Bernard Laporte", "Olivier Magne", "Abdelatif Benazzi",
+            "Emile Ntamack", "Denis Charvet", "Serge Blanco", "Philippe Sella", "Jean-Pierre Rives",
 
-            // Tendances & Actuels
-            "Bundee Aki", "Jamison Gibson-Park", "Hugo Keenan", "Caelan Doris", "Duhan van der Merwe",
-            "Marcus Smith", "Ben Earl", "Ellis Genge", "Freddie Steward", "Handré Pollard",
-            "Pieter-Steph du Toit", "Lukhanyo Am", "Damian de Allende", "Will Jordan", "Rieko Ioane",
-            "Jordie Barrett", "Damian McKenzie", "Scott Barrett", "Pablo Matera", "Emiliano Boffelli",
-            "Blair Kinghorn", "Mack Hansen", "James Lowe", "Gabin Villière", "Melvyn Jaminet"
+            // Stars Internationales emblématiques (30)
+            "Jonny Wilkinson", "Dan Carter", "Bryan Habana", "Siya Kolisi", "Cheslin Kolbe",
+            "Finn Russell", "Ma'a Nonu", "Bakkies Botha", "Matt Giteau", "Sergio Parisse",
+            "Eben Etzebeth", "Jonah Lomu", "Richie McCaw", "Brian O'Driscoll", "Faf de Klerk",
+            "Beauden Barrett", "Ardie Savea", "Ange Capuozzo", "Alun Wyn Jones", "Shane Williams",
+            "Johnny Sexton", "Owen Farrell", "Maro Itoje", "Courtney Lawes", "Lukhanyo Am",
+            "Damian McKenzie", "Will Jordan", "Handré Pollard", "Michael Hooper", "Pablo Matera"
         ];
 
         const preloadedData = [];
@@ -185,19 +186,16 @@
             return "https://via.placeholder.com/320x400?text=Photo+non+disponible";
         }
 
-        // Préchargement global au démarrage
         async function initGame() {
             shuffle(players);
             let loadedCount = 0;
-
-            // Traitement par lots de 5 requêtes simultanées pour être très rapide
             const batchSize = 5;
+
             for (let i = 0; i < players.length; i += batchSize) {
                 const chunk = players.slice(i, i + batchSize);
                 const promises = chunk.map(async (name) => {
                     const url = await fetchImageUrl(name);
                     
-                    // Force le navigateur à télécharger physiquement l'image en mémoire
                     await new Promise((resolve) => {
                         const img = new Image();
                         img.onload = resolve;
@@ -216,7 +214,6 @@
                 progressBar.style.width = `${(loadedCount / players.length) * 100}%`;
             }
 
-            // Une fois fini, on masque le chargement et on affiche le jeu
             loaderScreen.style.display = 'none';
             cardContainer.style.display = 'flex';
             loadCard();
