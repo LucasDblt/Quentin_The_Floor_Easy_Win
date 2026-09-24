@@ -17,12 +17,36 @@
             margin: 0;
         }
 
+        #loader-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .progress-bar-container {
+            width: 300px;
+            height: 12px;
+            background-color: #333;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #4da6ff;
+            transition: width 0.1s ease;
+        }
+
         #card-container {
             background-color: #1e1e1e;
             border-radius: 16px;
             padding: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             width: 380px;
@@ -39,7 +63,6 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
-            position: relative;
         }
 
         img {
@@ -84,10 +107,18 @@
 </head>
 <body>
 
+    <div id="loader-screen">
+        <h2>Préchargement des photos...</h2>
+        <div id="load-status">0 / 100 joueurs prêts</div>
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+
     <div id="card-container">
         <div id="counter">1 / 100</div>
         <div class="image-wrapper">
-            <img id="player-img" src="" alt="Chargement...">
+            <img id="player-img" src="" alt="">
         </div>
         <div id="player-name">---</div>
         <div class="instructions">
@@ -97,7 +128,7 @@
 
     <script>
         const players = [
-            // Légendes Françaises
+            // Françaises
             "Antoine Dupont", "Romain Ntamack", "Thierry Dusautoir", "Serge Blanco", "Frédéric Michalak", 
             "Fabien Pelous", "Vincent Clerc", "Christophe Dominici", "Raphaël Ibañez", "Thomas Ramos",
             "Damian Penaud", "Gregory Alldritt", "Charles Ollivon", "Gaël Fickou", "Mathieu Jalibert",
@@ -106,7 +137,7 @@
             "Cyril Baille", "Julien Marchand", "Camille Chat", "Anthony Jelonch", "Bernard Le Roux",
             "François Trinh-Duc", "Maxime Médard", "Louis Picamoles", "Florian Fritz", "Sylvain Marconnet",
 
-            // Légendes Internationales
+            // Internationales
             "Jonny Wilkinson", "Dan Carter", "Richie McCaw", "Brian O'Driscoll", "Shane Williams",
             "Siya Kolisi", "Cheslin Kolbe", "Eben Etzebeth", "Faf de Klerk", "Bryan Habana",
             "Jonah Lomu", "Beauden Barrett", "Ardie Savea", "Aaron Smith", "Ma'a Nonu",
@@ -115,7 +146,7 @@
             "George North", "Louis Rees-Zammit", "Finn Russell", "Stuart Hogg", "Ronan O'Gara",
             "Johnny Sexton", "Tadhg Furlong", "Josh van der Flier", "Sergio Parisse", "Ange Capuozzo",
 
-            // Joueurs Tendances & Stars actuelles
+            // Tendances & Actuels
             "Bundee Aki", "Jamison Gibson-Park", "Hugo Keenan", "Caelan Doris", "Duhan van der Merwe",
             "Marcus Smith", "Ben Earl", "Ellis Genge", "Freddie Steward", "Handré Pollard",
             "Pieter-Steph du Toit", "Lukhanyo Am", "Damian de Allende", "Will Jordan", "Rieko Ioane",
@@ -123,10 +154,15 @@
             "Blair Kinghorn", "Mack Hansen", "James Lowe", "Gabin Villière", "Melvyn Jaminet"
         ];
 
+        const preloadedData = [];
         let currentIndex = 0;
         let isAnswerRevealed = false;
-        const imageCache = {};
 
+        const loaderScreen = document.getElementById('loader-screen');
+        const cardContainer = document.getElementById('card-container');
+        const loadStatus = document.getElementById('load-status');
+        const progressBar = document.getElementById('progress-bar');
+        
         const imgElement = document.getElementById('player-img');
         const nameElement = document.getElementById('player-name');
         const counterElement = document.getElementById('counter');
@@ -138,62 +174,79 @@
             }
         }
 
-        async function fetchImage(playerName) {
-            if (imageCache[playerName]) {
-                return imageCache[playerName];
-            }
-
+        async function fetchImageUrl(playerName) {
             try {
-                // Utilisation de l'API Wikipedia EN (CDN ultra-rapide)
                 const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(playerName)}`);
                 const data = await res.json();
-                
                 if (data.thumbnail && data.thumbnail.source) {
-                    imageCache[playerName] = data.thumbnail.source;
                     return data.thumbnail.source;
                 }
             } catch (e) {}
-
-            const fallback = "https://via.placeholder.com/320x400?text=Photo+non+disponible";
-            imageCache[playerName] = fallback;
-            return fallback;
+            return "https://via.placeholder.com/320x400?text=Photo+non+disponible";
         }
 
-        // Précharge la carte suivante pour un passage instantané
-        function preloadNextCard() {
-            const nextIndex = (currentIndex + 1) % players.length;
-            fetchImage(players[nextIndex]);
+        // Préchargement global au démarrage
+        async function initGame() {
+            shuffle(players);
+            let loadedCount = 0;
+
+            // Traitement par lots de 5 requêtes simultanées pour être très rapide
+            const batchSize = 5;
+            for (let i = 0; i < players.length; i += batchSize) {
+                const chunk = players.slice(i, i + batchSize);
+                const promises = chunk.map(async (name) => {
+                    const url = await fetchImageUrl(name);
+                    
+                    // Force le navigateur à télécharger physiquement l'image en mémoire
+                    await new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                        img.src = url;
+                    });
+
+                    return { name, url };
+                });
+
+                const results = await Promise.all(promises);
+                preloadedData.push(...results);
+
+                loadedCount += chunk.length;
+                loadStatus.textContent = `${loadedCount} / ${players.length} joueurs prêts`;
+                progressBar.style.width = `${(loadedCount / players.length) * 100}%`;
+            }
+
+            // Une fois fini, on masque le chargement et on affiche le jeu
+            loaderScreen.style.display = 'none';
+            cardContainer.style.display = 'flex';
+            loadCard();
         }
 
-        async function loadCard() {
+        function loadCard() {
             isAnswerRevealed = false;
             nameElement.classList.remove('visible');
-            nameElement.textContent = players[currentIndex];
-            counterElement.textContent = `${currentIndex + 1} / ${players.length}`;
             
-            const imageUrl = await fetchImage(players[currentIndex]);
-            imgElement.src = imageUrl;
-
-            preloadNextCard();
+            const currentItem = preloadedData[currentIndex];
+            nameElement.textContent = currentItem.name;
+            imgElement.src = currentItem.url;
+            counterElement.textContent = `${currentIndex + 1} / ${preloadedData.length}`;
         }
 
         document.addEventListener('keydown', (event) => {
-            if (event.code === 'Space') {
+            if (event.code === 'Space' && cardContainer.style.display === 'flex') {
                 event.preventDefault();
                 
                 if (!isAnswerRevealed) {
                     nameElement.classList.add('visible');
                     isAnswerRevealed = true;
                 } else {
-                    currentIndex = (currentIndex + 1) % players.length;
+                    currentIndex = (currentIndex + 1) % preloadedData.length;
                     loadCard();
                 }
             }
         });
 
-        // Initialisation
-        shuffle(players);
-        loadCard();
+        initGame();
     </script>
 </body>
 </html>
